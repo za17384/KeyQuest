@@ -13,6 +13,20 @@ python app.py
 
 Then open http://127.0.0.1:5000
 
+## Share the game
+
+Use the **title screen** URL, not `/map`:
+
+`https://YOUR-APP.onrender.com/`
+
+Suggested first post:
+
+> I made Keystroke Quest, a free pixel typing game where each stage teaches new keys and ends in a boss fight. Try the first level and tell me where it gets difficult: [link]
+
+Record a 10–20 second clip of typing, a combo, and the first boss, then post that with the same link.
+
+This repo is a Flask app, so it cannot be uploaded as a static HTML5 game on itch.io. Host it on Render (or similar) and link that play URL from itch as an external game if you want it listed there.
+
 ## Turning on the AI (optional)
 
 The game is fully playable without this. With a key, the drills and the story

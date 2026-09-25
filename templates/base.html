@@ -3,7 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}KEYSTROKE QUEST{% endblock %}</title>
+<title>{% block title %}{{ kq_site_name }} — a pixel typing beat-em-up{% endblock %}</title>
+<meta name="description" content="{% block meta_description %}{{ kq_description }}{% endblock %}">
+<meta name="theme-color" content="#3ba7e8">
+<meta name="author" content="Keystroke Quest">
+<link rel="canonical" href="{% block canonical %}{{ kq_canonical }}{% endblock %}">
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/icon.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ kq_site_name }}">
+<meta property="og:title" content="{% block og_title %}{{ kq_site_name }} — a pixel typing beat-em-up{% endblock %}">
+<meta property="og:description" content="{% block og_description %}{{ kq_description }}{% endblock %}">
+<meta property="og:url" content="{{ self.canonical() }}">
+<meta property="og:image" content="{{ kq_og_image }}">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1376">
+<meta property="og:image:height" content="768">
+<meta property="og:image:alt" content="Keystroke Quest title screen: a pixel typing beat-em-up">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ self.og_title() }}">
+<meta name="twitter:description" content="{{ self.og_description() }}">
+<meta name="twitter:image" content="{{ kq_og_image }}">
+
+<script type="application/ld+json">
+{{ kq_jsonld | safe }}
+</script>
+
 <link rel="stylesheet" href="{{ url_for('static', filename='css/retro.css') }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">

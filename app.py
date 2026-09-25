@@ -6,6 +6,7 @@ Run with:  python app.py   then open http://127.0.0.1:5000
 import json
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import ai
 import config
@@ -16,8 +17,24 @@ import progress as progress_mod
 app = Flask(__name__)
 app.config["SECRET_KEY"] = config.SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 db.init_db()
+
+
+def public_origin() -> str:
+    if config.PUBLIC_URL:
+        return config.PUBLIC_URL
+    return request.url_root.rstrip("/")
+
+
+def public_url(path: str = "/") -> str:
+    origin = public_origin()
+    if not path or path == "/":
+        return origin + "/"
+    if not path.startswith("/"):
+        path = "/" + path
+    return origin + path
 
 
 # --------------------------------------------------------------------------
@@ -243,13 +260,71 @@ def api_settings():
     return jsonify({"ok": True})
 
 
+@app.route("/robots.txt")
+def robots_txt():
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        f"Sitemap: {public_url('/sitemap.xml')}\n"
+    )
+    return body, 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    pages = [
+        (public_url("/"), "1.0", "daily"),
+        (public_url("/map"), "0.8", "weekly"),
+        (public_url("/stats"), "0.3", "monthly"),
+    ]
+    urls = []
+    for loc, priority, changefreq in pages:
+        urls.append(
+            "<url>"
+            f"<loc>{loc}</loc>"
+            f"<changefreq>{changefreq}</changefreq>"
+            f"<priority>{priority}</priority>"
+            "</url>"
+        )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + "".join(urls)
+        + "</urlset>"
+    )
+    return xml, 200, {"Content-Type": "application/xml; charset=utf-8"}
+
+
 @app.context_processor
 def inject_globals():
     settings = db.get_player().get("settings", {})
+    origin = public_origin()
+    path = request.path if request.path != "/" else "/"
+    jsonld = {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": config.SITE_NAME,
+        "alternateName": "KEYSTROKE QUEST",
+        "description": config.DEFAULT_DESCRIPTION,
+        "url": public_url("/"),
+        "image": origin + url_for("static", filename="img/og.png"),
+        "genre": ["Typing", "Educational", "Role-playing"],
+        "gamePlatform": "Web browser",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "isAccessibleForFree": True,
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+    }
     return {
         "kq_settings": settings,
         "kq_settings_json": json.dumps(settings),
         "kq_ai_on": ai.is_ai_enabled(),
+        "kq_site_name": config.SITE_NAME,
+        "kq_description": config.DEFAULT_DESCRIPTION,
+        "kq_canonical": public_url(path),
+        "kq_og_image": origin + url_for("static", filename="img/og.png"),
+        "kq_jsonld": json.dumps(jsonld),
     }
 
 

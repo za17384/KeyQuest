@@ -636,8 +636,18 @@ body.kq-no-scanlines #kq-scanlines {
   font-size: 11px;
   letter-spacing: 0.24em;
   color: var(--kq-white);
-  margin: 28px 0 22px;
+  margin: 28px 0 10px;
   text-shadow: 3px 3px 0 var(--kq-ink);
+}
+
+.kq-title__pitch {
+  font-family: var(--kq-font-body);
+  font-size: 22px;
+  line-height: 1.25;
+  color: var(--kq-white);
+  margin: 0 0 22px;
+  max-width: 22em;
+  text-shadow: 2px 2px 0 var(--kq-ink);
 }
 
 .kq-press-start {

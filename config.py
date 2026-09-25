@@ -22,6 +22,16 @@ LINES_PER_STAGE = 6
 
 SECRET_KEY = os.environ.get("KQ_SECRET_KEY", "keystroke-quest-local")
 
+SITE_NAME = "Keystroke Quest"
+DEFAULT_DESCRIPTION = (
+    "A free pixel typing beat-em-up. Each stage teaches new keys and fingers, "
+    "then ends in a boss fight. Can you beat the first boss?"
+)
+# Set PUBLIC_URL on Render if previews show the wrong host. RENDER_EXTERNAL_URL is auto-set.
+PUBLIC_URL = (
+    os.environ.get("PUBLIC_URL") or os.environ.get("RENDER_EXTERNAL_URL") or ""
+).rstrip("/")
+
 
 def ai_enabled() -> bool:
     """True when a Groq key is present and the SDK is importable."""
