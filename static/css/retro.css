@@ -794,8 +794,9 @@ body.kq-no-scanlines #kq-scanlines {
 .kq-world {
   position: relative;
   border-bottom: 6px solid var(--kq-ink);
-  padding: 22px 18px 26px;
+  padding: 22px 20px 28px;
   overflow: hidden;
+  width: 100%;
 }
 
 .kq-world__head {
@@ -804,8 +805,10 @@ body.kq-no-scanlines #kq-scanlines {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 14px;
-  margin-bottom: 18px;
+  justify-content: space-between;
+  gap: 14px 20px;
+  width: 100%;
+  margin-bottom: 16px;
 }
 
 .kq-world__title {
@@ -836,31 +839,16 @@ body.kq-no-scanlines #kq-scanlines {
   filter: saturate(0.25);
 }
 
-/* the dotted path + nodes */
+/* full-width stage cards */
 .kq-path {
   position: relative;
   z-index: 3;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: flex-start;
-  padding: 14px 0 0;
-}
-
-.kq-path::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 52px;
-  height: 6px;
-  background-image: repeating-linear-gradient(
-    to right,
-    var(--kq-ink) 0,
-    var(--kq-ink) 8px,
-    rgba(0, 0, 0, 0) 8px,
-    rgba(0, 0, 0, 0) 16px
-  );
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  align-items: stretch;
+  padding: 8px 0 0;
 }
 
 .kq-node {
@@ -868,17 +856,24 @@ body.kq-no-scanlines #kq-scanlines {
   z-index: 4;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
-  width: 116px;
-  text-align: center;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
   text-decoration: none;
   color: var(--kq-white);
+  background: rgba(10, 8, 16, 0.42);
+  border: var(--kq-border) solid var(--kq-ink);
+  box-shadow: var(--kq-drop) var(--kq-drop) 0 0 var(--kq-shadow);
+  padding: 12px 12px 14px;
 }
 
 .kq-node__box {
   width: 74px;
   height: 74px;
+  align-self: center;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -893,14 +888,27 @@ body.kq-no-scanlines #kq-scanlines {
   transition: transform 60ms steps(2, end), box-shadow 60ms steps(2, end);
 }
 
-a.kq-node:hover .kq-node__box {
+a.kq-node {
+  transition: transform 60ms steps(2, end), box-shadow 60ms steps(2, end);
+}
+
+a.kq-node:hover {
   transform: translateY(-3px);
   box-shadow: var(--kq-drop) 7px 0 0 var(--kq-shadow);
 }
 
-a.kq-node:active .kq-node__box {
+a.kq-node:hover .kq-node__box {
+  transform: none;
+}
+
+a.kq-node:active {
   transform: translate(var(--kq-drop), var(--kq-drop));
   box-shadow: 0 0 0 0 var(--kq-shadow);
+}
+
+a.kq-node:active .kq-node__box {
+  transform: none;
+  box-shadow: var(--kq-drop) var(--kq-drop) 0 0 var(--kq-shadow);
 }
 
 .kq-node:focus-visible {
@@ -909,11 +917,13 @@ a.kq-node:active .kq-node__box {
 }
 
 .kq-node__name {
-  font-family: var(--kq-font-pixel);
-  font-size: 9px;
-  line-height: 1.6;
+  font-family: var(--kq-font-body);
+  font-size: 22px;
+  line-height: 1.15;
   color: var(--kq-white);
   text-shadow: 2px 2px 0 var(--kq-ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .kq-node__keys {
@@ -926,14 +936,17 @@ a.kq-node:active .kq-node__box {
 }
 
 .kq-node__blurb {
-  font-size: 17px;
-  line-height: 1.15;
+  font-family: var(--kq-font-body);
+  font-size: 20px;
+  line-height: 1.2;
   color: var(--kq-white);
   background: var(--kq-ink);
   border: 2px solid var(--kq-shadow);
-  padding: 4px 6px;
-  height: 4.6em;
-  overflow: hidden;
+  padding: 8px 8px 10px;
+  height: auto;
+  min-height: 5.4em;
+  overflow: visible;
+  flex: 1;
 }
 
 .kq-node--passed .kq-node__box {
@@ -1015,6 +1028,19 @@ a.kq-node:active .kq-node__box {
 
 .kq-node__stars {
   min-height: 16px;
+  align-self: center;
+}
+
+@media (max-width: 1200px) {
+  .kq-path {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .kq-path {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* --- world themes ------------------------------------------------------ */

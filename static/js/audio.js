@@ -12,6 +12,11 @@
   var master = null;
   var enabled = false;
   var gestureBound = false;
+  var bgmGain = null;
+  var bgmPlaying = false;
+  var bgmTimer = null;
+  var bgmStep = 0;
+  var bgmNextTime = 0;
 
   /* ---------------------------------------------------------------- utils */
 
@@ -60,6 +65,16 @@
         master = ctx.createGain();
         master.gain.value = 0.5;
         master.connect(ctx.destination);
+        bgmGain = ctx.createGain();
+        bgmGain.gain.value = 0.16;
+        bgmGain.connect(master);
+      }
+      if (ctx && !bgmGain) {
+        try {
+          bgmGain = ctx.createGain();
+          bgmGain.gain.value = 0.16;
+          bgmGain.connect(master);
+        } catch (e) {}
       }
       if (ctx.state === 'suspended' && ctx.resume) {
         var p = ctx.resume();
@@ -77,6 +92,7 @@
     gestureBound = true;
     var wake = function () {
       ensureCtx();
+      if (enabled) startBgm();
     };
     try {
       document.addEventListener('pointerdown', wake, { passive: true });
@@ -191,6 +207,89 @@
     tone({ type: 'triangle', freq: 196, to: 392, dur: 0.4, vol: 0.09, delay: 0.3 });
   });
 
+  /* --------------------------------------------------------------- bgm */
+
+  // 16 eighth-notes: a looping 8-bit overworld in C
+  var BGM_MELODY = [
+    523.25, 659.25, 783.99, 659.25,
+    880.0, 783.99, 659.25, 523.25,
+    698.46, 880.0, 783.99, 659.25,
+    587.33, 659.25, 523.25, 392.0
+  ];
+  var BGM_BASS = [
+    130.81, 130.81, 196.0, 196.0,
+    220.0, 220.0, 164.81, 164.81,
+    174.61, 174.61, 130.81, 130.81,
+    196.0, 196.0, 98.0, 130.81
+  ];
+  var BGM_STEP = 0.22;
+
+  function bgmTone(type, freq, t0, dur, vol) {
+    var c = ctx;
+    if (!c || !bgmGain || !freq) return;
+    try {
+      var osc = c.createOscillator();
+      var gain = c.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+      gain.gain.setValueAtTime(0.0005, t0);
+      gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+      osc.connect(gain);
+      gain.connect(bgmGain);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+      osc.onended = function () {
+        try {
+          gain.disconnect();
+          osc.disconnect();
+        } catch (e) {}
+      };
+    } catch (e) {}
+  }
+
+  function scheduleBgm() {
+    var c = ensureCtx();
+    if (!c || !enabled || !bgmPlaying) return;
+    try {
+      if (bgmNextTime < c.currentTime + 0.05) bgmNextTime = c.currentTime + 0.05;
+      while (bgmNextTime < c.currentTime + 1.1) {
+        var i = bgmStep % BGM_MELODY.length;
+        var t0 = bgmNextTime;
+        var dur = BGM_STEP * 0.86;
+        bgmTone('square', BGM_MELODY[i], t0, dur, 0.09);
+        bgmTone('triangle', BGM_BASS[i], t0, BGM_STEP * 0.96, 0.14);
+        if (i % 2 === 0) {
+          bgmTone('square', 1600, t0, 0.03, 0.025);
+        }
+        bgmStep += 1;
+        bgmNextTime += BGM_STEP;
+      }
+    } catch (e) {}
+  }
+
+  function startBgm() {
+    if (!enabled || bgmPlaying) return;
+    var c = ensureCtx();
+    if (!c) return;
+    bgmPlaying = true;
+    bgmStep = 0;
+    bgmNextTime = c.currentTime + 0.08;
+    scheduleBgm();
+    try {
+      if (bgmTimer) clearInterval(bgmTimer);
+      bgmTimer = setInterval(scheduleBgm, 180);
+    } catch (e) {}
+  }
+
+  function stopBgm() {
+    bgmPlaying = false;
+    try {
+      if (bgmTimer) clearInterval(bgmTimer);
+    } catch (e) {}
+    bgmTimer = null;
+  }
+
   /* --------------------------------------------------------------- toggle */
 
   function toggleEl() {
@@ -218,6 +317,9 @@
     if (enabled) {
       ensureCtx();
       blip();
+      startBgm();
+    } else {
+      stopBgm();
     }
     return enabled;
   }
@@ -243,6 +345,12 @@
       enabled = storedPreference();
       bindGesture();
       bindToggle();
+      try {
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) stopBgm();
+          else if (enabled) startBgm();
+        });
+      } catch (e) {}
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', bindToggle);
       }
@@ -262,7 +370,9 @@
     hit: hit,
     levelUp: levelUp,
     blip: blip,
-    start: start
+    start: start,
+    bgmStart: startBgm,
+    bgmStop: stopBgm
   };
 
   init();
