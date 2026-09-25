@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}PLAYER CARD - KEYSTROKE QUEST{% endblock %}
+{% block body_class %}kq-body--stats{% endblock %}
+
+{% block content %}
+<div class="kq-stats">
+
+  <header class="kq-stats__header">
+    <h1 class="kq-stats__title">PLAYER CARD</h1>
+    <div class="kq-scorelines">
+      <div class="kq-stat">
+        <span class="kq-label">LEVEL</span>
+        <span class="kq-stat__value">{{ level.level }}</span>
+      </div>
+      <div class="kq-stat">
+        <span class="kq-label">TOTAL XP</span>
+        <span class="kq-stat__value kq-stat__value--xp">{{ player.xp }}</span>
+      </div>
+      <div class="kq-stat">
+        <span class="kq-label">BEST WPM</span>
+        <span class="kq-stat__value kq-stat__value--wpm" id="kq-card-best">--</span>
+      </div>
+      <div class="kq-stat">
+        <span class="kq-label">RUNS LOGGED</span>
+        <span class="kq-stat__value" id="kq-card-runs">--</span>
+      </div>
+    </div>
+
+    <div class="kq-xp-row" style="margin-top: 14px;">
+      <span class="kq-label">NEXT LV</span>
+      <div class="kq-xp" role="img"
+           aria-label="Experience: {{ level.xp_into_level }} of {{ level.xp_for_next }}">
+        <div class="kq-xp__fill kq-xp__fill--orange"
+             style="width: {{ (level.progress * 100) | round(0, 'floor') | int }}%;"></div>
+      </div>
+      <span class="kq-label">{{ level.xp_into_level }}/{{ level.xp_for_next }} XP</span>
+    </div>
+
+    <div class="kq-btn-row" style="margin-top: 18px;">
+      <a class="kq-btn kq-btn--primary" href="{{ url_for('world_map') }}">WORLD MAP</a>
+      <a class="kq-btn kq-btn--ghost" href="{{ url_for('title_screen') }}">TITLE</a>
+    </div>
+  </header>
+
+  <section class="kq-panel" aria-label="Keyboard accuracy heatmap">
+    <h2 class="kq-panel__title">KEY ACCURACY HEATMAP</h2>
+    <div class="kq-heatmap" id="kq-card-heatmap"></div>
+    <div class="kq-scale" aria-hidden="true">
+      <span class="kq-legend-item"><span class="kq-legend-swatch" style="background: #2b3348;"></span>NO DATA</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch" style="background: var(--kq-red);"></span>&lt;70%</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch" style="background: var(--kq-orange);"></span>70-84%</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch" style="background: var(--kq-yellow);"></span>85-91%</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch" style="background: var(--kq-green);"></span>92-96%</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch" style="background: var(--kq-correct);"></span>97%+</span>
+    </div>
+  </section>
+
+  <div class="kq-stats__grid">
+    <section class="kq-panel" aria-label="Per-finger accuracy">
+      <h2 class="kq-panel__title">FINGER ACCURACY</h2>
+      <div class="kq-fingerbars" id="kq-card-fingers"></div>
+    </section>
+
+    <section class="kq-panel" aria-label="Weakest keys">
+      <h2 class="kq-panel__title">WEAKEST KEYS</h2>
+      <div class="kq-weak" id="kq-card-weak"></div>
+    </section>
+  </div>
+
+  <section class="kq-panel" aria-label="Words per minute over time">
+    <h2 class="kq-panel__title">WPM OVER TIME</h2>
+    <div class="kq-chart" id="kq-card-chart"></div>
+    <p class="kq-label" style="margin-top: 10px;">OLDEST &rarr; NEWEST (LAST 50 RUNS)</p>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var ROWS = [
+    ["q","w","e","r","t","y","u","i","o","p"],
+    ["a","s","d","f","g","h","j","k","l",";"],
+    ["z","x","c","v","b","n","m",",",".","/"],
+    [" "]
+  ];
+  var FALLBACK_FINGER = {
+    q:["left","pinky"], w:["left","ring"], e:["left","middle"], r:["left","index"],
+    t:["left","index"], y:["right","index"], u:["right","index"], i:["right","middle"],
+    o:["right","ring"], p:["right","pinky"],
+    a:["left","pinky"], s:["left","ring"], d:["left","middle"], f:["left","index"],
+    g:["left","index"], h:["right","index"], j:["right","index"], k:["right","middle"],
+    l:["right","ring"], ";":["right","pinky"],
+    z:["left","pinky"], x:["left","ring"], c:["left","middle"], v:["left","index"],
+    b:["left","index"], n:["right","index"], m:["right","index"], ",":["right","middle"],
+    ".":["right","ring"], "/":["right","pinky"],
+    " ":["right","thumb"]
+  };
+  var FINGER_ORDER = ["pinky", "ring", "middle", "index", "thumb"];
+
+  function heatClass(acc) {
+    if (acc === null) return "kq-key--heat-none";
+    if (acc < 0.70) return "kq-key--heat-bad";
+    if (acc < 0.85) return "kq-key--heat-low";
+    if (acc < 0.92) return "kq-key--heat-mid";
+    if (acc < 0.97) return "kq-key--heat-good";
+    return "kq-key--heat-top";
+  }
+
+  function pct(value) {
+    return Math.round((value || 0) * 100) + "%";
+  }
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function renderHeatmap(mount, heatmap) {
+    var byKey = {};
+    heatmap.forEach(function (row) { byKey[row.key] = row; });
+    mount.textContent = "";
+
+    ROWS.forEach(function (keys) {
+      var rowEl = el("div", "kq-heatmap__row");
+      keys.forEach(function (key) {
+        var data = byKey[key];
+        var acc = data ? data.accuracy : null;
+        var pair = FALLBACK_FINGER[key] || ["right", "index"];
+        var keyEl = el("div", "kq-key kq-key--wide-label " + heatClass(acc));
+        keyEl.setAttribute("data-key", key);
+        keyEl.setAttribute("data-hand", (data && data.hand) || pair[0]);
+        keyEl.setAttribute("data-finger", (data && data.finger) || pair[1]);
+        keyEl.appendChild(el("span", null, key === " " ? "SPACE" : key));
+        keyEl.appendChild(el("span", "kq-key__acc", acc === null ? "--" : pct(acc)));
+        keyEl.title = key === " " ? "SPACE" : key;
+        if (data) {
+          keyEl.title += " - " + pct(acc) + " over " + data.attempts +
+            " attempts, " + Math.round(data.avg_ms || 0) + "ms avg";
+        } else {
+          keyEl.title += " - not practiced yet";
+        }
+        rowEl.appendChild(keyEl);
+      });
+      mount.appendChild(rowEl);
+    });
+  }
+
+  function renderFingers(mount, fingers) {
+    mount.textContent = "";
+    if (!fingers.length) {
+      mount.appendChild(el("p", "kq-empty", "No keystrokes logged yet."));
+      return;
+    }
+    fingers.sort(function (a, b) {
+      if (a.hand !== b.hand) return a.hand < b.hand ? -1 : 1;
+      return FINGER_ORDER.indexOf(a.finger) - FINGER_ORDER.indexOf(b.finger);
+    });
+    fingers.forEach(function (row) {
+      var bar = el("div", "kq-fingerbar");
+      bar.setAttribute("data-finger", row.finger);
+      bar.appendChild(el("span", "kq-fingerbar__label",
+        (row.hand || "?").toUpperCase().slice(0, 1) + " " + (row.finger || "?").toUpperCase()));
+      var track = el("div", "kq-fingerbar__track");
+      var fill = el("div", "kq-fingerbar__fill");
+      fill.style.width = Math.max(2, Math.round((row.accuracy || 0) * 100)) + "%";
+      track.appendChild(fill);
+      bar.appendChild(track);
+      bar.appendChild(el("span", "kq-fingerbar__num", pct(row.accuracy)));
+      mount.appendChild(bar);
+    });
+  }
+
+  function renderWeak(mount, weak) {
+    mount.textContent = "";
+    if (!weak.length) {
+      mount.appendChild(el("p", "kq-empty", "No weak keys. Keep it up."));
+      return;
+    }
+    weak.forEach(function (row) {
+      var wrap = el("div", "kq-weak__row");
+      wrap.appendChild(el("span", "kq-weak__key", row.key === " " ? "SP" : row.key));
+      wrap.appendChild(el("span", "kq-weak__meta",
+        (row.hand || "?") + " " + (row.finger || "?") + " - " +
+        Math.round(row.avg_ms || 0) + "ms - " + (row.attempts || 0) + " tries"));
+      wrap.appendChild(el("span", "kq-weak__acc", pct(row.accuracy)));
+      mount.appendChild(wrap);
+    });
+  }
+
+  function renderChart(mount, history) {
+    mount.textContent = "";
+    if (!history.length) {
+      mount.appendChild(el("p", "kq-empty", "Play a stage to start the chart."));
+      return;
+    }
+    var rows = history.slice().reverse();
+    var max = 0;
+    rows.forEach(function (row) { if (row.wpm > max) max = row.wpm; });
+    if (max <= 0) max = 1;
+    rows.forEach(function (row) {
+      var bar = el("div", "kq-chart__bar" + (row.wpm === max ? " kq-chart__bar--best" : ""));
+      bar.style.height = Math.max(4, Math.round((row.wpm / max) * 100)) + "%";
+      bar.title = Math.round(row.wpm) + " WPM - " + pct(row.accuracy) +
+        " - " + (row.created_at || "");
+      mount.appendChild(bar);
+    });
+    var best = document.getElementById("kq-card-best");
+    if (best) best.textContent = Math.round(max);
+    var runs = document.getElementById("kq-card-runs");
+    if (runs) runs.textContent = rows.length;
+  }
+
+  function fail(message) {
+    ["kq-card-heatmap", "kq-card-fingers", "kq-card-weak", "kq-card-chart"]
+      .forEach(function (id) {
+        var mount = document.getElementById(id);
+        if (mount) {
+          mount.textContent = "";
+          mount.appendChild(el("p", "kq-empty", message));
+        }
+      });
+  }
+
+  fetch("/api/stats", { headers: { "Accept": "application/json" } })
+    .then(function (res) {
+      if (!res.ok) throw new Error("bad status " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      renderHeatmap(document.getElementById("kq-card-heatmap"), data.heatmap || []);
+      renderFingers(document.getElementById("kq-card-fingers"), data.fingers || []);
+      renderWeak(document.getElementById("kq-card-weak"), data.weak_keys || []);
+      renderChart(document.getElementById("kq-card-chart"), data.history || []);
+    })
+    .catch(function () {
+      fail("STATS UNAVAILABLE");
+    });
+})();
+</script>
+{% endblock %}

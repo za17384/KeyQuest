@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}WORLD MAP - KEYSTROKE QUEST{% endblock %}
+{% block body_class %}kq-body--map{% endblock %}
+
+{% block content %}
+{# first unlocked, not-yet-passed stage is the one that pulses #}
+{% set ns = namespace(current=None) %}
+{% for world in worlds %}
+  {% for stage in world.stages %}
+    {% if ns.current is none and not stage.locked and not stage.passed %}
+      {% set ns.current = stage.id %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+<div class="kq-map">
+
+  <header class="kq-topbar">
+    <h1 class="kq-topbar__title">WORLD MAP</h1>
+    <a class="kq-btn kq-btn--ghost kq-hud__back" href="{{ url_for('title_screen') }}">TITLE</a>
+    <a class="kq-btn kq-btn--ghost kq-hud__back" href="{{ url_for('stats_screen') }}">PLAYER CARD</a>
+    <span class="kq-topbar__spacer"></span>
+    <div class="kq-levelchip">
+      <span class="kq-levelchip__lvl">LV {{ level.level }}</span>
+      <div class="kq-xp" role="img"
+           aria-label="Experience: {{ level.xp_into_level }} of {{ level.xp_for_next }}">
+        <div class="kq-xp__fill kq-xp__fill--green"
+             style="width: {{ (level.progress * 100) | round(0, 'floor') | int }}%;"></div>
+      </div>
+      <span class="kq-label">{{ level.xp_into_level }}/{{ level.xp_for_next }} XP</span>
+    </div>
+  </header>
+
+  {% for world in worlds %}
+  <section class="kq-world kq-world--{{ world.theme }}{% if world.locked %} kq-world--locked{% endif %}"
+           aria-label="{{ world.title }}">
+
+    <div class="kq-scenery kq-scenery--{{ world.theme }}" aria-hidden="true"></div>
+
+    <div class="kq-world__head">
+      <h2 class="kq-world__title">{{ world.title }}</h2>
+      <span class="kq-world__sub">{{ world.subtitle }}</span>
+      <span class="kq-world__boss">BOSS: {{ world.boss_name }}</span>
+    </div>
+
+    <div class="kq-path">
+      {% for stage in world.stages %}
+        {% set is_current = (stage.id == ns.current) %}
+        {% set blurb = stage.get('blurb') or (stage.mode ~ ' / ' ~ (stage.new_keys or 'review')) %}
+        {% set classes = 'kq-node'
+             ~ (' kq-node--boss' if stage.is_boss else '')
+             ~ (' kq-node--locked' if stage.locked else '')
+             ~ (' kq-node--passed' if stage.passed else '')
+             ~ (' kq-node--current' if is_current else '') %}
+
+        {% if stage.locked %}
+        <div class="{{ classes }}" aria-disabled="true"
+             title="LOCKED - clear the previous stage first">
+          <div class="kq-node__box">
+            <span class="kq-lock" aria-hidden="true"></span>
+            <span class="kq-label" style="font-size: 7px; color: var(--kq-ink);">LOCKED</span>
+          </div>
+          <span class="kq-node__name">{{ stage.title }}</span>
+          <span class="kq-node__stars" aria-hidden="true"></span>
+          <span class="kq-node__blurb">{{ blurb }}</span>
+        </div>
+        {% else %}
+        <a class="{{ classes }}" href="{{ url_for('stage_screen', stage_id=stage.id) }}"
+           title="{{ blurb }}"
+           aria-label="{{ stage.title }}{% if stage.is_boss %} (boss){% endif %} - {{ stage.stars }} of 3 stars{% if is_current %} - current stage{% endif %}">
+          <div class="kq-node__box">
+            {% if stage.is_boss %}
+            <span style="font-size: 11px;">BOSS</span>
+            {% else %}
+            <span>{{ stage.index_in_world }}</span>
+            {% endif %}
+            {% if stage.new_keys %}
+            <span class="kq-node__keys">{{ stage.new_keys }}</span>
+            {% endif %}
+          </div>
+          <span class="kq-node__name">{{ stage.title }}</span>
+          <span class="kq-node__stars kq-stars" aria-hidden="true">
+            {% for i in range(3) %}
+            <span class="kq-star{% if i < stage.stars %} kq-star--full{% endif %}"></span>
+            {% endfor %}
+          </span>
+          <span class="kq-node__blurb">{{ blurb }}</span>
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+</div>
+{% endblock %}

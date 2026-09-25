@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{{ stage.title }} - KEYSTROKE QUEST{% endblock %}
+{% block body_class %}kq-body--stage{% endblock %}
+
+{% block content %}
+<div id="kq-stage"
+     data-stage-id="{{ stage.id }}"
+     data-is-boss="{{ 'true' if stage.is_boss else 'false' }}">
+
+  <!-- ---------------- HUD ---------------- -->
+  <header class="kq-hud">
+    <a class="kq-btn kq-btn--ghost kq-hud__back" href="{{ url_for('world_map') }}">&larr; MAP</a>
+
+    <div class="kq-hud__cell kq-hud__cell--wide">
+      <span class="kq-label">HP</span>
+      <span class="kq-hp" id="kq-hp" role="img" aria-label="Hit points"></span>
+    </div>
+
+    <div class="kq-hud__cell">
+      <span class="kq-label">WPM</span>
+      <span class="kq-hud__value kq-hud__value--wpm" id="kq-wpm">0</span>
+    </div>
+
+    <div class="kq-hud__cell">
+      <span class="kq-label">ACC</span>
+      <span class="kq-hud__value kq-hud__value--acc" id="kq-accuracy">100%</span>
+    </div>
+
+    <div class="kq-hud__cell">
+      <span class="kq-label">TIME</span>
+      <span class="kq-hud__value kq-hud__value--timer" id="kq-timer">0:00</span>
+    </div>
+
+    <div class="kq-hud__cell">
+      <span class="kq-label">COMBO</span>
+      <span class="kq-hud__value kq-hud__value--combo" id="kq-combo">0</span>
+    </div>
+
+    <span class="kq-hud__spacer"></span>
+    <span class="kq-chip kq-chip--goal">GOAL {{ stage.goal_wpm }} WPM / {{ (stage.goal_accuracy * 100) | round(0, 'floor') | int }}%</span>
+  </header>
+
+  <div id="kq-combo-popup" aria-hidden="true" hidden></div>
+
+  <div class="kq-stage__body">
+
+    <div class="kq-stage__heading">
+      <h1 class="kq-topbar__title" style="font-size: 15px;">{{ stage.title }}</h1>
+      <span class="kq-chip">{{ world.title }}</span>
+      <span class="kq-chip">MODE: {{ stage.mode | upper }}</span>
+      {% if stage.new_keys %}
+      <span class="kq-chip kq-chip--keys">NEW: {{ stage.new_keys }}</span>
+      {% endif %}
+      {% if stage.is_boss %}
+      <span class="kq-chip kq-chip--boss">BOSS FIGHT</span>
+      {% endif %}
+    </div>
+
+    <!-- ---------------- boss panel ---------------- -->
+    {% if stage.is_boss %}
+    <section id="kq-boss" aria-label="Boss">
+      <div id="kq-boss-sprite" data-boss-theme="{{ world.theme }}" aria-hidden="true"></div>
+      <div class="kq-boss__main">
+        <span class="kq-label">ENEMY</span>
+        <div id="kq-boss-name">{{ world.boss_name }}</div>
+        <div class="kq-boss__hp" role="img" aria-label="Boss hit points">
+          <div id="kq-boss-hp-fill" style="width: 100%;"></div>
+        </div>
+        <div id="kq-boss-say" aria-live="polite"></div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ---------------- typing surface ---------------- -->
+    <section class="kq-type" aria-label="Typing surface">
+      <div id="kq-text" aria-live="off"></div>
+      <div id="kq-caret" aria-hidden="true"></div>
+      <div id="kq-fx" aria-hidden="true"></div>
+      <label for="kq-input" class="kq-label" style="position: absolute; clip-path: inset(50%);">
+        Type the text above
+      </label>
+      <input id="kq-input" type="text" autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false" aria-label="Typing input">
+    </section>
+
+    <p class="kq-hint" style="text-align: center;">
+      Click the text or press <kbd>TAB</kbd> then type. <kbd>ESC</kbd> pauses.
+    </p>
+
+    <!-- ---------------- keyboard + hands (filled by keyboard.js) ---------------- -->
+    <section id="kq-keyboard" aria-label="Virtual keyboard" aria-hidden="true"></section>
+    <section id="kq-hands" aria-label="Hand position guide" aria-hidden="true"></section>
+
+    <div class="kq-hands-legend" aria-hidden="true">
+      <span class="kq-legend-item"><span class="kq-legend-swatch kq-legend-swatch--pinky"></span>PINKY</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch kq-legend-swatch--ring"></span>RING</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch kq-legend-swatch--middle"></span>MIDDLE</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch kq-legend-swatch--index"></span>INDEX</span>
+      <span class="kq-legend-item"><span class="kq-legend-swatch kq-legend-swatch--thumb"></span>THUMB</span>
+    </div>
+
+  </div>
+
+  <!-- ---------------- dialogue overlay ---------------- -->
+  <div id="kq-dialogue" class="kq-overlay" hidden role="dialog" aria-modal="true"
+       aria-label="Story dialogue">
+    <div class="kq-dialogue__box">
+      <div id="kq-dialogue-portrait" data-portrait="narrator" aria-hidden="true"></div>
+      <div class="kq-dialogue__main">
+        <div id="kq-dialogue-speaker"></div>
+        <div id="kq-dialogue-text" aria-live="polite"></div>
+        <div id="kq-dialogue-next">PRESS ENTER &#9654;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------------- results overlay ---------------- -->
+  {% include "results.html" %}
+
+  <!-- ---------------- loading panel ---------------- -->
+  <div id="kq-loading" role="status" aria-live="polite">
+    <div class="kq-loading__box">
+      <div class="kq-loading__title">GENERATING...</div>
+      <div class="kq-loading__blocks" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}<script>KQGame.boot({ stageId: {{ stage_id }} });</script>{% endblock %}

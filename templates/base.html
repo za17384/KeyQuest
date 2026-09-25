@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}KEYSTROKE QUEST{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/retro.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<div id="kq-scanlines" aria-hidden="true"></div>
+
+<button id="kq-sound-toggle" class="kq-btn kq-btn--ghost" data-on="false" type="button"
+        aria-label="Toggle sound">SOUND: OFF</button>
+
+<div id="kq-screen">
+  {% block content %}{% endblock %}
+</div>
+
+<script>
+  window.KQ_SETTINGS = {{ kq_settings_json | safe }};
+  window.KQ_AI_ON = {{ 'true' if kq_ai_on else 'false' }};
+</script>
+<script src="{{ url_for('static', filename='js/audio.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogue.js') }}"></script>
+<script src="{{ url_for('static', filename='js/keyboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/engine.js') }}"></script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,40 @@
+{# post-stage overlay. included by stage.html - not a standalone page. #}
+<div id="kq-results" class="kq-overlay" hidden role="dialog" aria-modal="true"
+     aria-label="Stage results">
+  <div class="kq-results__box">
+
+    <div class="kq-results__banner">STAGE CLEAR</div>
+
+    <span class="kq-label">RANK</span>
+    <div id="kq-results-rank">-</div>
+
+    <div id="kq-results-stars" class="kq-stars kq-stars--big" role="img"
+         aria-label="Stars earned"></div>
+
+    <div class="kq-results__grid">
+      <div class="kq-stat">
+        <span class="kq-label">WPM</span>
+        <span class="kq-stat__value kq-stat__value--wpm" id="kq-results-wpm">0</span>
+      </div>
+      <div class="kq-stat">
+        <span class="kq-label">ACCURACY</span>
+        <span class="kq-stat__value kq-stat__value--acc" id="kq-results-accuracy">0%</span>
+      </div>
+      <div class="kq-stat">
+        <span class="kq-label">MAX COMBO</span>
+        <span class="kq-stat__value kq-stat__value--combo" id="kq-results-combo">0</span>
+      </div>
+      <div class="kq-stat">
+        <span class="kq-label">XP GAINED</span>
+        <span class="kq-stat__value kq-stat__value--xp" id="kq-results-xp">0</span>
+      </div>
+    </div>
+
+    <div class="kq-results__buttons">
+      <button type="button" class="kq-btn kq-btn--danger" id="kq-results-retry">RETRY</button>
+      <button type="button" class="kq-btn kq-btn--primary" id="kq-results-next">NEXT</button>
+      <a class="kq-btn kq-btn--ghost" id="kq-results-map" href="{{ url_for('world_map') }}">MAP</a>
+    </div>
+
+  </div>
+</div>

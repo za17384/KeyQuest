@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}KEYSTROKE QUEST{% endblock %}
+{% block body_class %}kq-body--title{% endblock %}
+
+{% block content %}
+<div class="kq-title">
+
+  <div class="kq-title__bg" aria-hidden="true">
+    <div class="kq-title__streaks"></div>
+    <div class="kq-pixstars"></div>
+    <div class="kq-pixstars--slow"></div>
+    <div class="kq-cloud" style="top: 14%; animation-delay: -6s;"></div>
+    <div class="kq-cloud kq-cloud--2" style="top: 36%; animation-delay: -24s;"></div>
+    <div class="kq-cloud kq-cloud--3" style="top: 58%; animation-delay: -40s;"></div>
+    <div class="kq-title__ground"></div>
+  </div>
+
+  <div class="kq-title__inner">
+
+    <h1 class="kq-logo">
+      KEYSTROKE
+      <span class="kq-logo__line2">QUEST</span>
+    </h1>
+
+    <p class="kq-title__tag">A PIXEL TYPING BEAT-EM-UP</p>
+
+    <p class="kq-press-start">PRESS START</p>
+
+    <nav class="kq-title__menu" aria-label="Main menu">
+      <a class="kq-btn kq-btn--primary" href="{{ url_for('world_map') }}" autofocus>START</a>
+      {% if has_save %}
+      <a class="kq-btn" href="{{ url_for('world_map') }}">CONTINUE</a>
+      {% endif %}
+      <a class="kq-btn kq-btn--ghost" href="{{ url_for('stats_screen') }}">PLAYER CARD</a>
+    </nav>
+
+    <div class="kq-title__footer">
+      {% if ai_on %}
+      <span class="kq-badge kq-badge--on">
+        <span class="kq-badge__dot" aria-hidden="true"></span>AI: ONLINE
+      </span>
+      {% else %}
+      <span class="kq-badge kq-badge--off">
+        <span class="kq-badge__dot" aria-hidden="true"></span>AI: OFFLINE
+      </span>
+      {% endif %}
+
+      <span class="kq-badge">LV {{ level.level }}</span>
+      <span class="kq-badge">XP {{ player.xp }}</span>
+    </div>
+
+    <p class="kq-hint" style="margin-top: 18px;">
+      Press <kbd>ENTER</kbd> to begin &middot; <kbd>TAB</kbd> to move &middot; <kbd>ESC</kbd> to back out
+    </p>
+
+  </div>
+</div>
+{% endblock %}
