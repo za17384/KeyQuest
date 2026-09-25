@@ -17,7 +17,9 @@
     shown: 0,
     timer: null,
     resolve: null,
-    bound: false
+    bound: false,
+    autoMs: 0,
+    autoTimer: null
   };
 
   function el(id) {
@@ -42,6 +44,13 @@
     if (state.timer) {
       clearTimeout(state.timer);
       state.timer = null;
+    }
+  }
+
+  function clearAuto() {
+    if (state.autoTimer) {
+      clearTimeout(state.autoTimer);
+      state.autoTimer = null;
     }
   }
 
@@ -99,6 +108,14 @@
     if (text) text.textContent = state.fullText;
     state.shown = state.fullText.length;
     setNextVisible(true);
+    if (state.autoMs > 0) {
+      var words = state.fullText.trim().split(/\s+/).filter(Boolean).length || 1;
+      var wait = Math.max(400, words * state.autoMs);
+      clearAuto();
+      state.autoTimer = setTimeout(function () {
+        advance();
+      }, wait);
+    }
   }
 
   /* ------------------------------------------------------------- advance */
@@ -109,6 +126,7 @@
       finishLine(); // first press: complete the line, do not skip it
       return;
     }
+    clearAuto();
     state.index += 1;
     if (state.index >= state.lines.length) {
       close();
@@ -155,6 +173,7 @@
 
   function close() {
     clearTimer();
+    clearAuto();
     unbind();
     state.open = false;
     state.revealing = false;
@@ -208,5 +227,20 @@
     return !!state.open;
   }
 
-  window.KQDialogue = { play: play, skip: skip, isOpen: isOpen };
+  function setAutoAdvance(msPerWord) {
+    state.autoMs = Math.max(0, Number(msPerWord) || 0);
+    if (!state.autoMs) clearAuto();
+  }
+
+  function playOne(line) {
+    return play(line ? [line] : []);
+  }
+
+  window.KQDialogue = {
+    play: play,
+    playOne: playOne,
+    skip: skip,
+    isOpen: isOpen,
+    setAutoAdvance: setAutoAdvance
+  };
 })();

@@ -1,4 +1,11 @@
 {% extends "base.html" %}
+{% set kq_boss_art = {
+  'dojo': 'img/bosses/dojo.jpg',
+  'tower': 'img/bosses/tower.jpg',
+  'undergrid': 'img/bosses/undergrid.png',
+  'citadel': 'img/bosses/citadel.png',
+  'harbor': 'img/bosses/harbor.jpg'
+} %}
 {% block title %}{{ stage.title }} — Keystroke Quest{% endblock %}
 {% block og_title %}{{ stage.title }} — Keystroke Quest{% endblock %}
 {% block meta_description %}Play {{ stage.title }} in Keystroke Quest, a free pixel typing beat-em-up.{% endblock %}
@@ -61,7 +68,10 @@
     <!-- ---------------- boss panel ---------------- -->
     {% if stage.is_boss %}
     <section id="kq-boss" aria-label="Boss">
-      <div id="kq-boss-sprite" data-boss-theme="{{ world.theme }}" aria-hidden="true"></div>
+      <img id="kq-boss-sprite" class="kq-boss-sprite"
+           data-boss-theme="{{ world.theme }}"
+           src="{{ url_for('static', filename=kq_boss_art.get(world.theme, 'img/bosses/dojo.jpg')) }}"
+           alt="{{ world.boss_name }}" aria-hidden="true">
       <div class="kq-boss__main">
         <span class="kq-label">ENEMY</span>
         <div id="kq-boss-name">{{ world.boss_name }}</div>

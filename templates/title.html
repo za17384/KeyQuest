@@ -1,7 +1,62 @@
 {% extends "base.html" %}
+{% set kq_boss_art = {
+  'dojo': 'img/bosses/dojo.jpg',
+  'tower': 'img/bosses/tower.jpg',
+  'undergrid': 'img/bosses/undergrid.png',
+  'citadel': 'img/bosses/citadel.png',
+  'harbor': 'img/bosses/harbor.jpg'
+} %}
 {% block title %}Keystroke Quest — a free pixel typing beat-em-up{% endblock %}
 {% block og_title %}Keystroke Quest — can you beat the first boss?{% endblock %}
 {% block body_class %}kq-body--title{% endblock %}
+
+{% set demo_worlds = [
+  {"theme": "dojo", "title": "The Home Row Dojo", "subtitle": "Plant Eight Fingers", "boss": "Sensei Semicolon",
+   "stages": [
+     {"n": 1, "letters": "fj", "name": "F and J: The Anchors"},
+     {"n": 2, "letters": "dk", "name": "D and K: Middle Guard"},
+     {"n": 3, "letters": "sl", "name": "S and L: Ring Bearers"},
+     {"n": 4, "letters": "a;", "name": "A and Semicolon"},
+     {"n": 5, "letters": "gh", "name": "G and H: Inner Reach"},
+     {"n": "BOSS", "letters": "", "name": "Sensei Semicolon", "boss": true}
+   ]},
+  {"theme": "tower", "title": "Skyreach Tower", "subtitle": "Climb The Top Row", "boss": "The Q-Bit",
+   "stages": [
+     {"n": 1, "letters": "ru", "name": "R and U: First Climb"},
+     {"n": 2, "letters": "ei", "name": "E and I: Sky Steps"},
+     {"n": 3, "letters": "wo", "name": "W and O: Ring Ascent"},
+     {"n": 4, "letters": "qp", "name": "Q and P: Pinky Summit"},
+     {"n": 5, "letters": "ty", "name": "T and Y: Center Spire"},
+     {"n": "BOSS", "letters": "", "name": "The Q-Bit", "boss": true}
+   ]},
+  {"theme": "undergrid", "title": "The Undergrid", "subtitle": "Dig The Bottom Row", "boss": "Z-Wraith",
+   "stages": [
+     {"n": 1, "letters": "vm", "name": "V and M: Down Below"},
+     {"n": 2, "letters": "c,", "name": "C and Comma"},
+     {"n": 3, "letters": "x.", "name": "X and Period"},
+     {"n": 4, "letters": "z/", "name": "Z and Slash"},
+     {"n": 5, "letters": "bn", "name": "B and N: Long Stretch"},
+     {"n": "BOSS", "letters": "", "name": "Z-Wraith", "boss": true}
+   ]},
+  {"theme": "citadel", "title": "Shift Citadel", "subtitle": "Master The Shift", "boss": "Lord Shift",
+   "stages": [
+     {"n": 1, "letters": "FJ", "name": "Shift Awakens"},
+     {"n": 2, "letters": ":", "name": "Colon Gate"},
+     {"n": 3, "letters": "TY", "name": "Capital Spire"},
+     {"n": 4, "letters": "VM", "name": "Deep Caps"},
+     {"n": 5, "letters": "Aa", "name": "Mixed Case Mayhem"},
+     {"n": "BOSS", "letters": "", "name": "Lord Shift", "boss": true}
+   ]},
+  {"theme": "harbor", "title": "Glyph Harbor", "subtitle": "Glyphs And Numbers", "boss": "The Null Pointer",
+   "stages": [
+     {"n": 1, "letters": "'\"", "name": "Quote Cove"},
+     {"n": 2, "letters": "?!", "name": "Question and Bang"},
+     {"n": 3, "letters": "123", "name": "Digits 1 to 5"},
+     {"n": 4, "letters": "678", "name": "Digits 6 to 0"},
+     {"n": 5, "letters": "-=", "name": "Glyph Soup"},
+     {"n": "BOSS", "letters": "", "name": "The Null Pointer", "boss": true}
+   ]}
+] %}
 
 {% block content %}
 <div class="kq-title">
@@ -10,51 +65,123 @@
     <div class="kq-title__streaks"></div>
     <div class="kq-pixstars"></div>
     <div class="kq-pixstars--slow"></div>
-    <div class="kq-cloud" style="top: 14%; animation-delay: -6s;"></div>
-    <div class="kq-cloud kq-cloud--2" style="top: 36%; animation-delay: -24s;"></div>
-    <div class="kq-cloud kq-cloud--3" style="top: 58%; animation-delay: -40s;"></div>
     <div class="kq-title__ground"></div>
   </div>
 
+  <div id="kq-clouds"></div>
+
   <div class="kq-title__inner">
 
-    <h1 class="kq-logo">
-      KEYSTROKE
-      <span class="kq-logo__line2">QUEST</span>
-    </h1>
-
-    <p class="kq-title__tag">A PIXEL TYPING BEAT-EM-UP</p>
-    <p class="kq-title__pitch">Each stage teaches new keys. Each world ends in a boss fight.</p>
-
-    <p class="kq-press-start">PRESS START</p>
-
-    <nav class="kq-title__menu" aria-label="Main menu">
-      <a class="kq-btn kq-btn--primary" href="{{ url_for('world_map') }}" autofocus>START</a>
-      {% if has_save %}
-      <a class="kq-btn" href="{{ url_for('world_map') }}">CONTINUE</a>
-      {% endif %}
-      <a class="kq-btn kq-btn--ghost" href="{{ url_for('stats_screen') }}">PLAYER CARD</a>
-    </nav>
-
-    <div class="kq-title__footer">
-      {% if ai_on %}
-      <span class="kq-badge kq-badge--on">
-        <span class="kq-badge__dot" aria-hidden="true"></span>AI: ONLINE
-      </span>
-      {% else %}
-      <span class="kq-badge kq-badge--off">
-        <span class="kq-badge__dot" aria-hidden="true"></span>AI: OFFLINE
-      </span>
-      {% endif %}
-
-      <span class="kq-badge">LV {{ level.level }}</span>
-      <span class="kq-badge">XP {{ player.xp }}</span>
+    <div class="kq-title__brand">
+      <h1 class="kq-logo">
+        KEYSTROKE
+        <span class="kq-logo__line2">QUEST</span>
+      </h1>
+      <p class="kq-title__tag">A PIXEL TYPING BEAT-EM-UP</p>
     </div>
 
-    <p class="kq-hint" style="margin-top: 18px;">
-      Press <kbd>ENTER</kbd> to begin &middot; <kbd>TAB</kbd> to move &middot; <kbd>ESC</kbd> to back out
-    </p>
+    <div class="kq-title__mid">
+      <p class="kq-title__pitch">Each stage teaches new keys. Each world ends in a boss fight.</p>
+    </div>
+
+    <div class="kq-title__actions">
+      <nav class="kq-title__menu" aria-label="Main menu">
+        <a class="kq-btn kq-btn--primary" id="kq-start-btn" href="{{ url_for('world_map') }}" autofocus>START</a>
+        <button class="kq-btn" type="button" id="kq-demo-btn">DEMO</button>
+        {% if has_save %}
+        <a class="kq-btn" href="{{ url_for('world_map') }}">CONTINUE</a>
+        {% endif %}
+        <a class="kq-btn kq-btn--ghost" href="{{ url_for('stats_screen') }}">PLAYER CARD</a>
+      </nav>
+
+      <div class="kq-title__footer">
+        {% if ai_on %}
+        <span class="kq-badge kq-badge--on">
+          <span class="kq-badge__dot" aria-hidden="true"></span>AI: ONLINE
+        </span>
+        {% else %}
+        <span class="kq-badge kq-badge--off">
+          <span class="kq-badge__dot" aria-hidden="true"></span>AI: OFFLINE
+        </span>
+        {% endif %}
+
+        <span class="kq-badge">LV {{ level.level }}</span>
+        <span class="kq-badge">XP {{ player.xp }}</span>
+      </div>
+
+      <p class="kq-hint" style="margin-top: 18px;">
+        Press <kbd>ENTER</kbd> to begin &middot; click a cloud &middot; DEMO is automatic
+      </p>
+    </div>
 
   </div>
 </div>
+
+<div id="kq-demo" hidden data-scene="world" data-focus="dojo">
+  <button id="kq-demo-skip" class="kq-btn kq-btn--ghost" type="button">SKIP</button>
+
+  <div id="kq-demo-caption" aria-live="polite"></div>
+
+  <div id="kq-demo-map">
+    {% for world in demo_worlds %}
+    <section class="kq-world kq-world--{{ world.theme }} kq-demo-world"
+             data-theme="{{ world.theme }}" aria-label="{{ world.title }}">
+      <div class="kq-scenery kq-scenery--{{ world.theme }}" aria-hidden="true"></div>
+      <div class="kq-world__head">
+        <h2 class="kq-world__title">{{ world.title }}</h2>
+        <span class="kq-world__sub">{{ world.subtitle }}</span>
+        <span class="kq-world__boss">BOSS: {{ world.boss }}</span>
+      </div>
+      <div class="kq-path">
+        {% for stage in world.stages %}
+        <div class="kq-node{% if stage.boss %} kq-node--boss{% endif %}" data-index="{{ loop.index0 }}">
+          <div class="kq-node__box">
+            <span>{{ stage.n }}</span>
+            {% if stage['letters'] %}
+            <span class="kq-node__keys">{{ stage['letters'] }}</span>
+            {% endif %}
+          </div>
+          <span class="kq-node__name">{{ stage.name }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+
+  <div id="kq-demo-finale" hidden>
+    <div id="kq-demo-boss-row">
+      <figure class="kq-demo-villain" data-boss-theme="dojo">
+        <img class="kq-demo-boss kq-boss-sprite" src="{{ url_for('static', filename=kq_boss_art.dojo) }}" alt="Sensei Semicolon">
+        <figcaption>Sensei Semicolon</figcaption>
+      </figure>
+      <figure class="kq-demo-villain" data-boss-theme="tower">
+        <img class="kq-demo-boss kq-boss-sprite" src="{{ url_for('static', filename=kq_boss_art.tower) }}" alt="The Q-Bit">
+        <figcaption>The Q-Bit</figcaption>
+      </figure>
+      <figure class="kq-demo-villain" data-boss-theme="undergrid">
+        <img class="kq-demo-boss kq-boss-sprite" src="{{ url_for('static', filename=kq_boss_art.undergrid) }}" alt="Z-Wraith">
+        <figcaption>Z-Wraith</figcaption>
+      </figure>
+      <figure class="kq-demo-villain" data-boss-theme="citadel">
+        <img class="kq-demo-boss kq-boss-sprite" src="{{ url_for('static', filename=kq_boss_art.citadel) }}" alt="Lord Shift">
+        <figcaption>Lord Shift</figcaption>
+      </figure>
+      <figure class="kq-demo-villain" data-boss-theme="harbor">
+        <img class="kq-demo-boss kq-boss-sprite" src="{{ url_for('static', filename=kq_boss_art.harbor) }}" alt="The Null Pointer">
+        <figcaption>The Null Pointer</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div id="kq-demo-progress" aria-hidden="true">
+    <div id="kq-demo-progress-all"></div>
+    <div id="kq-demo-progress-scene"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/title.js') }}"></script>
+<script src="{{ url_for('static', filename='js/demo.js') }}"></script>
 {% endblock %}

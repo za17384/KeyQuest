@@ -33,12 +33,33 @@
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/retro.css') }}">
 </head>
+{% set kq_boss_art = {
+  'dojo': 'img/bosses/dojo.jpg',
+  'tower': 'img/bosses/tower.jpg',
+  'undergrid': 'img/bosses/undergrid.png',
+  'citadel': 'img/bosses/citadel.png',
+  'harbor': 'img/bosses/harbor.jpg'
+} %}
 <body class="{% block body_class %}{% endblock %}">
 
 <div id="kq-scanlines" aria-hidden="true"></div>
 
-<button id="kq-sound-toggle" class="kq-btn kq-btn--ghost" data-on="false" type="button"
-        aria-label="Toggle sound">SOUND: OFF</button>
+<header id="kq-banner">
+  <div class="kq-banner__side kq-banner__side--left">{% block banner_left %}{% endblock %}</div>
+  <div class="kq-banner__center">
+    <button id="kq-sound-toggle" class="kq-btn kq-btn--ghost" data-on="false" type="button"
+            aria-pressed="false" aria-label="Toggle sound">SOUND: OFF</button>
+    <label class="kq-music" for="kq-music-select">
+      <span class="kq-music__label">MUSIC</span>
+      <select id="kq-music-select" aria-label="Select music">
+        <option value="title">Title</option>
+        <option value="overworld">Overworld</option>
+        <option value="battle">Battle</option>
+      </select>
+    </label>
+  </div>
+  <div class="kq-banner__side kq-banner__side--right">{% block banner_right %}{% endblock %}</div>
+</header>
 
 <div id="kq-screen">
   {% block content %}{% endblock %}

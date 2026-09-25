@@ -7,6 +7,7 @@
 
   var Ctx = window.AudioContext || window.webkitAudioContext || null;
   var STORE_KEY = 'kq.sound';
+  var THEME_STORE = 'kq.music';
 
   var ctx = null;
   var master = null;
@@ -17,6 +18,8 @@
   var bgmTimer = null;
   var bgmStep = 0;
   var bgmNextTime = 0;
+  var themeName = 'title';
+  var userTheme = 'title';
 
   /* ---------------------------------------------------------------- utils */
 
@@ -209,20 +212,81 @@
 
   /* --------------------------------------------------------------- bgm */
 
-  // 16 eighth-notes: a looping 8-bit overworld in C
-  var BGM_MELODY = [
-    523.25, 659.25, 783.99, 659.25,
-    880.0, 783.99, 659.25, 523.25,
-    698.46, 880.0, 783.99, 659.25,
-    587.33, 659.25, 523.25, 392.0
-  ];
-  var BGM_BASS = [
-    130.81, 130.81, 196.0, 196.0,
-    220.0, 220.0, 164.81, 164.81,
-    174.61, 174.61, 130.81, 130.81,
-    196.0, 196.0, 98.0, 130.81
-  ];
-  var BGM_STEP = 0.22;
+  var THEMES = {
+    title: {
+      step: 0.22,
+      melody: [
+        523.25, 659.25, 783.99, 659.25,
+        880.0, 783.99, 659.25, 523.25,
+        698.46, 880.0, 783.99, 659.25,
+        587.33, 659.25, 523.25, 392.0
+      ],
+      bass: [
+        130.81, 130.81, 196.0, 196.0,
+        220.0, 220.0, 164.81, 164.81,
+        174.61, 174.61, 130.81, 130.81,
+        196.0, 196.0, 98.0, 130.81
+      ]
+    },
+    overworld: {
+      step: 0.26,
+      melody: [
+        392.0, 523.25, 659.25, 523.25,
+        698.46, 659.25, 523.25, 392.0,
+        587.33, 698.46, 659.25, 523.25,
+        493.88, 523.25, 392.0, 329.63
+      ],
+      bass: [
+        98.0, 98.0, 130.81, 130.81,
+        174.61, 174.61, 146.83, 146.83,
+        130.81, 130.81, 98.0, 98.0,
+        146.83, 146.83, 82.41, 98.0
+      ]
+    },
+    battle: {
+      step: 0.14,
+      melody: [
+        659.25, 783.99, 1046.5, 783.99,
+        1174.7, 1046.5, 880.0, 783.99,
+        987.77, 1174.7, 1318.5, 1046.5,
+        880.0, 783.99, 659.25, 523.25
+      ],
+      bass: [
+        164.81, 164.81, 196.0, 196.0,
+        220.0, 220.0, 246.94, 246.94,
+        261.63, 196.0, 220.0, 164.81,
+        196.0, 130.81, 164.81, 196.0
+      ]
+    }
+  };
+  THEMES.demo = THEMES.battle;
+  var theme = THEMES.title;
+
+  function storedTheme() {
+    try {
+      var v = window.localStorage.getItem(THEME_STORE);
+      if (v === 'demo') v = 'battle';
+      if (v && THEMES[v]) return v;
+    } catch (e) {}
+    return 'title';
+  }
+
+  function persistTheme(name) {
+    userTheme = name;
+    try {
+      window.localStorage.setItem(THEME_STORE, name);
+    } catch (e) {}
+  }
+
+  function normalizeTheme(name) {
+    if (name === 'demo') return 'battle';
+    if (name && THEMES[name]) return name;
+    return 'title';
+  }
+
+  function isBattleTheme(name) {
+    return name === 'battle' || name === 'demo';
+  }
 
   function bgmTone(type, freq, t0, dur, vol) {
     var c = ctx;
@@ -253,17 +317,20 @@
     if (!c || !enabled || !bgmPlaying) return;
     try {
       if (bgmNextTime < c.currentTime + 0.05) bgmNextTime = c.currentTime + 0.05;
+      var melody = theme.melody;
+      var bass = theme.bass;
+      var step = theme.step || 0.22;
       while (bgmNextTime < c.currentTime + 1.1) {
-        var i = bgmStep % BGM_MELODY.length;
+        var i = bgmStep % melody.length;
         var t0 = bgmNextTime;
-        var dur = BGM_STEP * 0.86;
-        bgmTone('square', BGM_MELODY[i], t0, dur, 0.09);
-        bgmTone('triangle', BGM_BASS[i], t0, BGM_STEP * 0.96, 0.14);
+        var dur = step * 0.86;
+        bgmTone('square', melody[i], t0, dur, isBattleTheme(themeName) ? 0.11 : 0.09);
+        bgmTone('triangle', bass[i], t0, step * 0.96, 0.14);
         if (i % 2 === 0) {
-          bgmTone('square', 1600, t0, 0.03, 0.025);
+          bgmTone('square', isBattleTheme(themeName) ? 1800 : 1600, t0, 0.03, 0.03);
         }
         bgmStep += 1;
-        bgmNextTime += BGM_STEP;
+        bgmNextTime += step;
       }
     } catch (e) {}
   }
@@ -278,7 +345,7 @@
     scheduleBgm();
     try {
       if (bgmTimer) clearInterval(bgmTimer);
-      bgmTimer = setInterval(scheduleBgm, 180);
+      bgmTimer = setInterval(scheduleBgm, 80);
     } catch (e) {}
   }
 
@@ -288,6 +355,58 @@
       if (bgmTimer) clearInterval(bgmTimer);
     } catch (e) {}
     bgmTimer = null;
+  }
+
+  function musicSelectEl() {
+    try {
+      return document.getElementById('kq-music-select');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function paintMusicSelect() {
+    var el = musicSelectEl();
+    if (!el) return;
+    try {
+      var value = isBattleTheme(themeName) ? 'battle' : themeName;
+      if (el.querySelector('option[value="' + value + '"]')) el.value = value;
+    } catch (e) {}
+  }
+
+  function setTheme(name, persist) {
+    var next = normalizeTheme(name);
+    if (persist !== false) persistTheme(next);
+    if (themeName === next) {
+      paintMusicSelect();
+      return next;
+    }
+    themeName = next;
+    theme = THEMES[next];
+    if (bgmPlaying) {
+      stopBgm();
+      startBgm();
+    }
+    paintMusicSelect();
+    return themeName;
+  }
+
+  function restoreUserTheme() {
+    return setTheme(userTheme, false);
+  }
+
+  function bindMusicSelect() {
+    var el = musicSelectEl();
+    if (!el || el.getAttribute('data-kq-bound') === 'true') {
+      paintMusicSelect();
+      return;
+    }
+    el.setAttribute('data-kq-bound', 'true');
+    el.addEventListener('change', function () {
+      setTheme(el.value, true);
+      if (enabled) startBgm();
+    });
+    paintMusicSelect();
   }
 
   /* --------------------------------------------------------------- toggle */
@@ -343,8 +462,12 @@
   function init() {
     try {
       enabled = storedPreference();
+      userTheme = storedTheme();
+      themeName = userTheme;
+      theme = THEMES[themeName] || THEMES.title;
       bindGesture();
       bindToggle();
+      bindMusicSelect();
       try {
         document.addEventListener('visibilitychange', function () {
           if (document.hidden) stopBgm();
@@ -352,7 +475,10 @@
         });
       } catch (e) {}
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bindToggle);
+        document.addEventListener('DOMContentLoaded', function () {
+          bindToggle();
+          bindMusicSelect();
+        });
       }
     } catch (e) {}
     return enabled;
@@ -372,7 +498,15 @@
     blip: blip,
     start: start,
     bgmStart: startBgm,
-    bgmStop: stopBgm
+    bgmStop: stopBgm,
+    setTheme: setTheme,
+    restoreUserTheme: restoreUserTheme,
+    theme: function () {
+      return themeName;
+    },
+    userTheme: function () {
+      return userTheme;
+    }
   };
 
   init();
